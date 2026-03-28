@@ -1,0 +1,43 @@
+// if (zx == 1) sets x = 0        // 16-bit constant
+// if (nx == 1) sets x = !x       // bitwise not
+// if (zy == 1) sets y = 0        // 16-bit constant
+// if (ny == 1) sets y = !y       // bitwise not
+// if (f == 1)  sets out = x + y  // integer 2's complement addition
+// if (f == 0)  sets out = x & y  // bitwise and
+// if (no == 1) sets out = !out   // bitwise not
+
+CHIP ALU {
+    IN  
+        x[16], y[16],   
+        zx, 
+        nx, 
+        zy, 
+        ny, 
+        f,  
+        no; 
+    OUT 
+        out[16], 
+        zr,    
+        ng;      
+
+    PARTS:
+        Mux16(a=x, b=false, sel=zx, out=x1);
+        Not16(in=x1, out=notx1);
+        Mux16(a=x1, b=notx1, sel=nx, out=x2);
+
+        Mux16(a=y, b=false, sel=zy, out=y1);
+        Not16(in=y1, out=noty1);
+        Mux16(a=y1, b=noty1, sel=ny, out=y2);
+
+        Add16(a=x2, b=y2, out=addOut);
+        And16(a=x2, b=y2, out=andOut);
+        Mux16(a=andOut, b=addOut, sel=f, out=fOut);
+
+        Not16(in=fOut, out=notFOut);
+        Mux16(a=fOut, b=notFOut, sel=no, out=out, out[15]=ng, out[0..7]=low8, out[8..15]=high8);
+
+        Or8Way(in=low8, out=orLow);
+        Or8Way(in=high8, out=orHigh);
+        Or(a=orLow, b=orHigh, out=orAll);
+        Not(in=orAll, out=zr); 
+}
